@@ -15,9 +15,9 @@ Gui, Add, Text, x10, yy/mm/dd
 Gui, Add, Button, gGetTodayDate xp+70, Today
 Gui, Add, Edit, vDate xp+50 w100
 Gui, Add, CheckBox, vLockDate xp+110, Lock
-; Save ボタン
-Gui, Add, Button, gSaveHamlog xp+60, Save
-Gui, Add, CheckBox, vSaveClear xp+40 Checked, Clear
+; Save ボタン ： 不安定なので一旦実装中止
+; Gui, Add, Button, gSaveHamlog xp+60, Save
+; Gui, Add, CheckBox, vSaveClear xp+40 Checked, Clear
 
 ; 時間
 Gui, Add, Text, x10, hh:mm[JU]
@@ -183,18 +183,17 @@ GuiControl,, Time, %NowTime%
 return
 
 ; Saveボタン
-SaveHamlog:
-Gosub, SendToHamlog
-WinActivate, ahk_id %hwnd%
-WinWaitActive, ahk_id %hwnd%,, 1
-Sleep, 1000
-ControlClick, TButton1, ahk_id %hwnd%
-; WinActivate, ahk_class AutoHotkeyGUI
-if (SaveClear = 1) {
-    Gosub, ForceClear
-}
-return
-
+; SaveHamlog:
+; Gosub, SendToHamlog
+; WinActivate, ahk_id %hwnd%
+; WinWaitActive, ahk_id %hwnd%,, 1
+; Sleep, 500
+; ControlClick, TButton1, ahk_id %hwnd%
+; ; WinActivate, ahk_class AutoHotkeyGUI
+; if (SaveClear = 1) {
+;     Gosub, ForceClear
+; }
+; return
 
 ; HAMLOGに送信
 SendToHamlog:
@@ -235,6 +234,7 @@ return
 ; HAMLOGからゲット
 UpdateFromHamlog:
 Gui, Submit, NoHide
+; あえて一番上にあるTForm_Aを使う
 ; 各コントロールの値をHAMLOGから取得し、GUIに反映
 ControlGetText, Callsign, TEdit14, ahk_class TForm_A
 if (LockDate = 0) {
@@ -245,15 +245,15 @@ if (LockTime = 0) {
  ControlGetText, Time, TEdit12, ahk_class TForm_A
  Time := RegExReplace(Time, "\s")
 }
-ControlGetText, His, TEdit11, ahk_class TForm_A
-ControlGetText, My, TEdit10, ahk_class TForm_A
+ControlGetText, His,  TEdit11, ahk_class TForm_A
+ControlGetText, My,   TEdit10, ahk_class TForm_A
 ControlGetText, Freq, TEdit9, ahk_class TForm_A
 ControlGetText, Mode, TEdit8, ahk_class TForm_A
 ControlGetText, Code, TEdit7, ahk_class TForm_A
-ControlGetText, GL, TEdit6, ahk_class TForm_A
-ControlGetText, QSL, TEdit5, ahk_class TForm_A
+ControlGetText, GL,   TEdit6, ahk_class TForm_A
+ControlGetText, QSL,  TEdit5, ahk_class TForm_A
 ControlGetText, Name, TEdit4, ahk_class TForm_A
-ControlGetText, QTH, TEdit3, ahk_class TForm_A
+ControlGetText, QTH,  TEdit3, ahk_class TForm_A
 if (LockRem1 = 0) {
  ControlGetText, Rem1, TEdit2, ahk_class TForm_A
 }
@@ -272,12 +272,12 @@ GuiControl,, My,       %My%
 GuiControl,, Freq,     %Freq%
 GuiControl,, Mode,     %Mode%
 GuiControl,, Code,     %Code%
-GuiControl,, GL,     %GL%
-GuiControl,, QSL,     %QSL%
+GuiControl,, GL,       %GL%
+GuiControl,, QSL,      %QSL%
 GuiControl,, Name,     %Name%
 GuiControl,, QTH,      %QTH%
-GuiControl,, Rem1,      %Rem1%
-GuiControl,, Rem2,      %Rem2%
+GuiControl,, Rem1,     %Rem1%
+GuiControl,, Rem2,     %Rem2%
 return
 
 ForceClear:
