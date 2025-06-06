@@ -1,14 +1,14 @@
-﻿#IfWinActive ahk_class TForm_A
+﻿; #IfWinActive ahk_class TForm_A
 
 ; コールサイン
 Gui, Add, Text,, コールサイン
 Gui, Add, Edit, vCallsign hwndCallsignHwnd x80 yp w100
 
 ; Get/Clear/Send ボタン
-Gui, Add, Button, gCheckCallsign xp+100, Get
-Gui, Add, Button, gClearHamlog xp+30, Clear
-Gui, Add, Button, gSendToHamlog xp+90 yp, Set
-Gui, Add, Button, gUpdateFromHamlog xp+40, Recv
+; Gui, Add, Button, gCheckCallsign xp+100, Get
+Gui, Add, Button, gClearHamlog xp+100, Clear
+Gui, Add, Button, gSendToHamlog xp+120 yp, Set
+Gui, Add, Button, gUpdateFromHamlog xp+30, Get
 
 ; 日付
 Gui, Add, Text, x10, yy/mm/dd
@@ -83,10 +83,48 @@ return
 F5::Gosub, UpdateFromHamlog
 #IfWinActive
 
+; HAMLOGのLOGダイアログを見つける
+GetHamlogWindow(retry := 0) {
+    this_id := ""
+    WinGet, idList, List, ahk_class TForm_A
+    Loop, %idList%
+    {
+        this_id := idList%A_Index%
+        WinGetTitle, title, ahk_id %this_id%
+        if InStr(title, "ＬＯＧ")
+            return this_id
+    }
+
+    ; 見つからなかったらダメ元でメインウィンドウにEnter送る
+    WinActivate, ahk_class TThwin
+    if WinExist("ahk_class TThwin") {
+        ControlSend,, {Enter}, ahk_class TThwin
+        Sleep, 500  ; 起動待ち（必要に応じて調整）
+        WinGet, this_id, ID, ahk_class TForm_A ahk_exe hamlogw.exe
+    } 
+
+    if (!this_id) {
+        ; TThwinがいなかったらメッセージ or 自動起動
+        if (retry < 3) {
+            Run, C:\HAMLOG\hamlogw.exe
+            Sleep, 1500
+            return GetHamlogWindow(retry + 1)
+        } else {
+            MsgBox, 48, HAMLOGが見つかりません
+        }
+    }
+    return this_id
+}
+
 ; Clearボタン
 ClearHamlog:
-WinActivate, ahk_class TForm_A
-WinWaitActive, ahk_class TForm_A
+hwnd := GetHamlogWindow()
+if (!hwnd) {
+    MsgBox, LOG - を含むHAMLOGウィンドウが見つかりませんでした
+    return
+}
+WinActivate, ahk_id %hwnd%
+WinWaitActive, ahk_id %hwnd%,, 1
 Send, !a
 Sleep, 300
 Gosub, UpdateFromHamlog
@@ -110,10 +148,18 @@ return
 
 CheckCallsign:
 Gui, Submit, NoHide
+
+hwnd := GetHamlogWindow()
+if (!hwnd) {
+    MsgBox, LOG - を含むHAMLOGウィンドウが見つかりませんでした
+    return
+}
+
+
 ; ① コールサインを送る
-ControlSetText, TEdit14, %Callsign%, ahk_class TForm_A
+ControlSetText, TEdit14, %Callsign%, ahk_id %hwnd%
 Sleep, 100
-ControlSend, TEdit14, {Enter}, ahk_class TForm_A
+ControlSend, TEdit14, {Enter}, ahk_id %hwnd%
 
 ; ② 少し待って日付・時間を取得して自GUIに反映
 Sleep, 300  ; HAMLOG側で更新されるのを待つ（必要なら調整）
@@ -136,16 +182,16 @@ NowTime := A_Hour . ":" . A_Min . "J"
 GuiControl,, Time, %NowTime%
 return
 
-
 ; Saveボタン
 SaveHamlog:
 Gosub, SendToHamlog
-WinActivate, ahk_class TForm_A
-WinWaitActive, ahk_class TForm_A
-Send, !s
-WinActivate, ahk_class AutoHotkeyGUI
+WinActivate, ahk_id %hwnd%
+WinWaitActive, ahk_id %hwnd%,, 1
+Sleep, 1000
+ControlClick, TButton1, ahk_id %hwnd%
+; WinActivate, ahk_class AutoHotkeyGUI
 if (SaveClear = 1) {
- Gosub, ForceClear
+    Gosub, ForceClear
 }
 return
 
@@ -153,20 +199,35 @@ return
 ; HAMLOGに送信
 SendToHamlog:
 Gui, Submit, NoHide
-ControlSetText, TEdit14, %Callsign%, ahk_class TForm_A
-ControlSetText, TEdit13, %Date%, ahk_class TForm_A
-ControlSetText, TEdit12, %Time%, ahk_class TForm_A
-ControlSetText, TEdit11, %His%, ahk_class TForm_A
-ControlSetText, TEdit10, %My%, ahk_class TForm_A
-ControlSetText, TEdit9, %Freq%, ahk_class TForm_A
-ControlSetText, TEdit8, %Mode%, ahk_class TForm_A
-ControlSetText, TEdit7, %Code%, ahk_class TForm_A
-ControlSetText, TEdit6, %GL%, ahk_class TForm_A
-ControlSetText, TEdit5, %QSL%, ahk_class TForm_A
-ControlSetText, TEdit4, %Name%, ahk_class TForm_A
-ControlSetText, TEdit3, %QTH%, ahk_class TForm_A
-ControlSetText, TEdit2, %Rem1%, ahk_class TForm_A
-ControlSetText, TEdit1, %Rem2%, ahk_class TForm_A
+
+hwnd := GetHamlogWindow()
+if (!hwnd) {
+    MsgBox, LOG - を含むHAMLOGウィンドウが見つかりませんでした
+    return
+}
+WinActivate, ahk_id %hwnd%
+WinWaitActive, ahk_id %hwnd%,, 1
+
+ControlSetText, TEdit14, %Callsign%, ahk_id %hwnd%
+; コールサインを入れたあとにEnterしないとセーブできないクソ仕様回避
+Sleep, 100
+ControlSend, TEdit14, {Enter}, ahk_id %hwnd%
+Sleep, 100  ; HAMLOG側で更新されるのを待つ（必要なら調整）
+
+ControlSetText, TEdit13, %Date%, ahk_id %hwnd%
+ControlSetText, TEdit12, %Time%, ahk_id %hwnd%
+ControlSetText, TEdit11, %His%, ahk_id %hwnd%
+ControlSetText, TEdit10, %My%, ahk_id %hwnd%
+ControlSetText, TEdit9, %Freq%, ahk_id %hwnd%
+ControlSetText, TEdit8, %Mode%, ahk_id %hwnd%
+ControlSetText, TEdit7, %Code%, ahk_id %hwnd%
+ControlSetText, TEdit6, %GL%, ahk_id %hwnd%
+ControlSetText, TEdit5, %QSL%, ahk_id %hwnd%
+ControlSetText, TEdit4, %Name%, ahk_id %hwnd%
+ControlSetText, TEdit3, %QTH%, ahk_id %hwnd%
+ControlSetText, TEdit2, %Rem1%, ahk_id %hwnd%
+ControlSetText, TEdit1, %Rem2%, ahk_id %hwnd%
+Sleep, 100  ; HAMLOG側で更新されるのを待つ（必要なら調整）
 
 return
 
@@ -229,7 +290,7 @@ if (LockTime = 0) {
 }
 Code := ""
 GL := ""
-QSL := "J"
+QSL := ""
 Name := ""
 QTH := ""
 if (LockRem1 = 0) {
