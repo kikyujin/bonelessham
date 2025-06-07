@@ -260,10 +260,10 @@ if (LockDate == 0) {
  ControlGetText, Date, TEdit13, ahk_class TForm_A
  Date := RegExReplace(Date, "\s")
 }
-if (LockTime == 0) {
+; if (LockTime == 0) {
  ControlGetText, Time, TEdit12, ahk_class TForm_A
  Time := RegExReplace(Time, "\s")
-}
+; }
 ControlGetText, His,  TEdit11, ahk_class TForm_A
 ControlGetText, My,   TEdit10, ahk_class TForm_A
 ControlGetText, Freq, TEdit9, ahk_class TForm_A
@@ -317,9 +317,9 @@ Callsign := ""
 if (LockDate == 0) {
  Date = //
 }
-if (LockTime == 0) {
+; if (LockTime == 0) {
  Time = :
-}
+; }
 Code := ""
 GL := ""
 QSL := ""
