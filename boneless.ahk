@@ -45,12 +45,12 @@ Gui, Add, Edit, vMode xp+50 w50
 
 ; Code GL QSL
 Gui, Add, Text, x10, Code
-Gui, Add, Edit, vCode xp+50 w60
+Gui, Add, Edit, vCode xp+50 w80
 
-Gui, Add, Text, xp+70, G/L
-Gui, Add, Edit, vGL xp+40 w60
+Gui, Add, Text, xp+90, G/L
+Gui, Add, Edit, vGL xp+30 w80
 
-Gui, Add, Text, xp+70, QSL
+Gui, Add, Text, xp+90, QSL
 Gui, Add, Edit, vQSL xp+40 w40
 
 ; QRA
