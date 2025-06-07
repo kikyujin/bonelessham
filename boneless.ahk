@@ -1,19 +1,21 @@
 ﻿; #IfWinActive ahk_class TForm_A
 
+Gui, Font, s12, Meiryo  ; 文字サイズ12pt、フォントMeiryo（日本語推奨）
+
 ; コールサイン
-Gui, Add, Text,, コールサイン
-Gui, Add, Edit, vCallsign hwndCallsignHwnd x80 yp w100
+Gui, Add, Text, x10, Callsign
+Gui, Add, Edit, vCallsign hwndCallsignHwnd x120 yp w100
 
 ; Get/Clear/Send ボタン
 ; Gui, Add, Button, gCheckCallsign xp+100, Get
-Gui, Add, Button, gClearHamlog xp+100, Clear
-Gui, Add, Button, gSendToHamlog xp+120 yp, Set
-Gui, Add, Button, gUpdateFromHamlog xp+30, Get
+Gui, Add, Button, gClearHamlog xp+120, Clear
+Gui, Add, Button, gSendToHamlog xp+130 yp, Set
+Gui, Add, Button, gUpdateFromHamlog xp+40, Get
 
 ; 日付
 Gui, Add, Text, x10, yy/mm/dd
-Gui, Add, Button, gGetTodayDate xp+70, Today
-Gui, Add, Edit, vDate xp+50 w100
+Gui, Add, Button, gGetTodayDate xp+110, Today
+Gui, Add, Edit, vDate xp+70 w100
 Gui, Add, CheckBox, vLockDate xp+110, Lock
 ; Save ボタン ： 不安定なので一旦実装中止
 ; Gui, Add, Button, gSaveHamlog xp+60, Save
@@ -21,52 +23,52 @@ Gui, Add, CheckBox, vLockDate xp+110, Lock
 
 ; 時間
 Gui, Add, Text, x10, hh:mm[JU]
-Gui, Add, Button, gSetNowTime xp+70, Now
-Gui, Add, Edit, vTime xp+50 w100
+Gui, Add, Button, gSetNowTime xp+110, Now
+Gui, Add, Edit, vTime xp+70 w100
 Gui, Add, CheckBox, vLockTime xp+110, Lock
 
 
 ; HIS MY FREQ MODE
 Gui, Add, Text, x10, His
-Gui, Add, Edit, vHis xp+30 w30
+Gui, Add, Edit, vHis xp+30 w40
 
-Gui, Add, Text, xp+40, My
-Gui, Add, Edit, vMy xp+20 w30
+Gui, Add, Text, xp+50, My
+Gui, Add, Edit, vMy xp+30 w40
 
-Gui, Add, Text, xp+45, Freq
-Gui, Add, Edit, vFreq xp+30 w50
+Gui, Add, Text, xp+50, Freq
+Gui, Add, Edit, vFreq xp+50 w50
 ; Gui, Add, ComboBox, vFreq xp+30 w50, 430|144|1200|50|28|21|7
 
 Gui, Add, Text, xp+60 yp+2, Mode
-Gui, Add, Edit, vMode xp+30 yp-2 w50
+Gui, Add, Edit, vMode xp+50 w50
 ; Gui, Add, ComboBox, vMode xp+30 yp-2 w50, FM|SSB|CW|DV|AM
 
 ; Code GL QSL
 Gui, Add, Text, x10, Code
-Gui, Add, Edit, vCode xp+30 w60
+Gui, Add, Edit, vCode xp+50 w60
 
 Gui, Add, Text, xp+70, G/L
-Gui, Add, Edit, vGL xp+20 w60
+Gui, Add, Edit, vGL xp+40 w60
 
 Gui, Add, Text, xp+70, QSL
-Gui, Add, Edit, vQSL xp+25 w40
+Gui, Add, Edit, vQSL xp+40 w40
 
-; His Name
+; QRA
 Gui, Add, Text, x10, QRA
-Gui, Add, Edit, vName xp+30 w250
+Gui, Add, Edit, vName xp+50 w250
 
 ; QTH
 Gui, Add, Text, x10, QTH
-Gui, Add, Edit, vQTH xp+30 w250
+Gui, Add, Edit, vQTH xp+50 w250
 
 ; Rem1
 Gui, Add, Text, x10, Rem1
-Gui, Add, Edit, vRem1 xp+30 w250
+Gui, Add, Edit, vRem1 xp+50 w250
 Gui, Add, CheckBox, vLockRem1 xp+260, Lock
 
 ; Rem2
 Gui, Add, Text, x10, Rem2
-Gui, Add, Edit, vRem2 xp+30 w250
+Gui, Add, Edit, vRem2 xp+50 w250
 Gui, Add, CheckBox, vLockRem2 xp+260, Lock
 
 ; WM_KEYDOWN（0x100） をフック
@@ -76,12 +78,18 @@ Gui, Show,, ボンレスHAM v0.99
 
 Gosub, UpdateFromHamlog
 
+SetTimer, CheckIME, 100
+
 return
 
 ; --- ホットキー定義 ---
 #IfWinActive ahk_class AutoHotkeyGUI
 F5::Gosub, UpdateFromHamlog
 #IfWinActive
+
+; ウィンドウが閉じたらクローズ
+GuiClose:
+    ExitApp
 
 ; HAMLOGのLOGダイアログを見つける
 GetHamlogWindow(retry := 0) {
@@ -135,8 +143,8 @@ return
 HandleKeyDown(wParam, lParam, msg, hwnd)
 {
     global CallsignHwnd
-    if (hwnd = CallsignHwnd) {
-        if (wParam = 13) { ; VK_RETURN（Enterキー）
+    if (hwnd == CallsignHwnd) {
+        if (wParam == 13) { ; VK_RETURN（Enterキー）
             SetTimer, CheckCallsignTimer, -10
         }
     }
@@ -190,7 +198,7 @@ return
 ; Sleep, 500
 ; ControlClick, TButton1, ahk_id %hwnd%
 ; ; WinActivate, ahk_class AutoHotkeyGUI
-; if (SaveClear = 1) {
+; if (SaveClear == 1) {
 ;     Gosub, ForceClear
 ; }
 ; return
@@ -237,11 +245,11 @@ Gui, Submit, NoHide
 ; あえて一番上にあるTForm_Aを使う
 ; 各コントロールの値をHAMLOGから取得し、GUIに反映
 ControlGetText, Callsign, TEdit14, ahk_class TForm_A
-if (LockDate = 0) {
+if (LockDate == 0) {
  ControlGetText, Date, TEdit13, ahk_class TForm_A
  Date := RegExReplace(Date, "\s")
 }
-if (LockTime = 0) {
+if (LockTime == 0) {
  ControlGetText, Time, TEdit12, ahk_class TForm_A
  Time := RegExReplace(Time, "\s")
 }
@@ -254,10 +262,10 @@ ControlGetText, GL,   TEdit6, ahk_class TForm_A
 ControlGetText, QSL,  TEdit5, ahk_class TForm_A
 ControlGetText, Name, TEdit4, ahk_class TForm_A
 ControlGetText, QTH,  TEdit3, ahk_class TForm_A
-if (LockRem1 = 0) {
+if (LockRem1 == 0) {
  ControlGetText, Rem1, TEdit2, ahk_class TForm_A
 }
-if (LockRem2 = 0) {
+if (LockRem2 == 0) {
  ControlGetText, Rem2, TEdit1, ahk_class TForm_A
 }
 Gosub, SetGUI
@@ -282,10 +290,10 @@ return
 
 ForceClear:
 Callsign := ""
-if (LockDate = 0) {
+if (LockDate == 0) {
  Date = //
 }
-if (LockTime = 0) {
+if (LockTime == 0) {
  Time = :
 }
 Code := ""
@@ -293,11 +301,28 @@ GL := ""
 QSL := ""
 Name := ""
 QTH := ""
-if (LockRem1 = 0) {
+if (LockRem1 == 0) {
  Rem1 := ""
 }
-if (LockRem2 = 0) {
+if (LockRem2 == 0) {
  Rem2 := ""
 }
 Gosub, SetGUI
 return
+
+; IME ON/OFF
+
+CheckIME:
+    ControlGetFocus, focusCtrl, A
+    if (focusCtrl ~= "^Edit(10|[1-9])$") {
+        WinGet, hwndActive, ID, A
+        ActivateIME(hwndActive, false)
+    } else {
+    }
+return
+
+ActivateIME(hCtl, onOff := true) {
+    hIMC := DllCall("imm32\ImmGetContext", "Ptr", hCtl, "Ptr")
+    DllCall("imm32\ImmSetOpenStatus", "Ptr", hIMC, "Int", onOff)
+    DllCall("imm32\ImmReleaseContext", "Ptr", hCtl, "Ptr", hIMC)
+}
