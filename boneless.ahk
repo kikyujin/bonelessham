@@ -1,15 +1,19 @@
-﻿; #IfWinActive ahk_class TForm_A
+﻿Gui, Font, s12, Meiryo  ; 文字サイズ12pt、フォントMeiryo（日本語推奨）
 
-Gui, Font, s12, Meiryo  ; 文字サイズ12pt、フォントMeiryo（日本語推奨）
+; マルチ
+Gui, Add, Text, x10, Stack
+Gui, Add, Button, xp+70 yp gCopySelection, ▼
+Gui, Add, Edit, x120 yp w300 h150 Multi WantReturn VScroll Wrap vCallsignM hwndhEdit1
+Gui, Add, Text, xm w400 h1 0x10
 
 ; コールサイン
 Gui, Add, Text, x10, Callsign
-Gui, Add, Edit, vCallsign hwndCallsignHwnd x120 yp w100
+; AC ボタン
+Gui, Add, Button, gClearHamlog xp+70, CL
+Gui, Add, Edit, vCallsign hwndCallsignHwnd x120 yp w160
 
-; Get/Clear/Send ボタン
-; Gui, Add, Button, gCheckCallsign xp+100, Get
-Gui, Add, Button, gClearHamlog xp+120, Clear
-Gui, Add, Button, gSendToHamlog xp+130 yp, Set
+; Get/Set ボタン
+Gui, Add, Button, gSendToHamlog xp+220 yp, Set
 Gui, Add, Button, gUpdateFromHamlog xp+40, Get
 
 ; 日付
@@ -25,7 +29,7 @@ Gui, Add, CheckBox, vLockDate xp+110, Lock
 Gui, Add, Text, x10, hh:mm[JU]
 Gui, Add, Button, gSetNowTime xp+110, Now
 Gui, Add, Edit, vTime xp+70 w100
-Gui, Add, CheckBox, vLockTime xp+110, Lock
+; Gui, Add, CheckBox, vLockTime xp+110, Lock
 
 
 ; HIS MY FREQ MODE
@@ -86,6 +90,27 @@ return
 #IfWinActive ahk_class AutoHotkeyGUI
 F5::Gosub, UpdateFromHamlog
 #IfWinActive
+
+; コピーして送る
+CopySelection:
+; 選択範囲取得
+VarSetCapacity(selStart, 4, 0)
+VarSetCapacity(selEnd, 4, 0)
+SendMessage, 0xB0, &selStart, &selEnd,, ahk_id %hEdit1%
+Start := NumGet(selStart, 0, "UInt")
+End := NumGet(selEnd, 0, "UInt")
+
+; テキスト取得
+ControlGetText, fullText,, ahk_id %hEdit1%
+SelectedText := SubStr(fullText, Start + 1, End - Start)
+if (SelectedText != "") {
+;    MsgBox, %SelectedText%
+    Gosub, ClearHamlog
+    GuiControl,, Edit2, %SelectedText%
+    Gosub, CheckCallsign
+}
+
+return
 
 ; ウィンドウが閉じたらクローズ
 GuiClose:
@@ -190,19 +215,6 @@ NowTime := A_Hour . ":" . A_Min . "J"
 GuiControl,, Time, %NowTime%
 return
 
-; Saveボタン
-; SaveHamlog:
-; Gosub, SendToHamlog
-; WinActivate, ahk_id %hwnd%
-; WinWaitActive, ahk_id %hwnd%,, 1
-; Sleep, 500
-; ControlClick, TButton1, ahk_id %hwnd%
-; ; WinActivate, ahk_class AutoHotkeyGUI
-; if (SaveClear == 1) {
-;     Gosub, ForceClear
-; }
-; return
-
 ; HAMLOGに送信
 SendToHamlog:
 Gui, Submit, NoHide
@@ -238,7 +250,6 @@ Sleep, 100  ; HAMLOG側で更新されるのを待つ（必要なら調整）
 
 return
 
-
 ; HAMLOGからゲット
 UpdateFromHamlog:
 Gui, Submit, NoHide
@@ -270,6 +281,19 @@ if (LockRem2 == 0) {
 }
 Gosub, SetGUI
 return
+
+; Saveボタン
+; SaveHamlog:
+; Gosub, SendToHamlog
+; WinActivate, ahk_id %hwnd%
+; WinWaitActive, ahk_id %hwnd%,, 1
+; Sleep, 300
+; ControlClick, TButton1, ahk_id %hwnd%
+; WinActivate, ahk_class AutoHotkeyGUI
+; if (SaveClear == 1) {
+;     Gosub, ForceClear
+; }
+; return
 
 SetGUI:
 GuiControl,, Callsign, %Callsign%
@@ -314,7 +338,7 @@ return
 
 CheckIME:
     ControlGetFocus, focusCtrl, A
-    if (focusCtrl ~= "^Edit(10|[1-9])$") {
+    if (focusCtrl ~= "^Edit(11|10|[1-9])$") {
         WinGet, hwndActive, ID, A
         ActivateIME(hwndActive, false)
     } else {
