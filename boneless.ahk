@@ -1,4 +1,9 @@
-﻿Gui, Font, s12, Meiryo  ; 文字サイズ12pt、フォントMeiryo（日本語推奨）
+﻿; BONELESS HAM v0.99
+; Copyright Kikyujin / MULTiTApps Inc.
+; Released under the MIT license
+; 2025-06/07
+
+Gui, Font, s12, Meiryo  ; 文字サイズ12pt、フォントMeiryo（日本語推奨）
 
 ; マルチ
 Gui, Add, Text, x10, Stack
@@ -34,7 +39,7 @@ Gui, Add, Edit, vTime xp+70 w100
 
 ; HIS MY FREQ MODE
 Gui, Add, Text, x10, His
-Gui, Add, Edit, vHis xp+30 w40
+Gui, Add, Edit, vHis xp+30 w40 hwndhHis
 
 Gui, Add, Text, xp+50, My
 Gui, Add, Edit, vMy xp+30 w40
@@ -84,6 +89,9 @@ Gosub, UpdateFromHamlog
 
 SetTimer, CheckIME, 100
 
+; クリアしておく
+Gosub, UpdateFromHamlog
+
 return
 
 ; --- ホットキー定義 ---
@@ -93,22 +101,22 @@ F5::Gosub, UpdateFromHamlog
 
 ; コピーして送る
 CopySelection:
-; 選択範囲取得
-VarSetCapacity(selStart, 4, 0)
-VarSetCapacity(selEnd, 4, 0)
-SendMessage, 0xB0, &selStart, &selEnd,, ahk_id %hEdit1%
-Start := NumGet(selStart, 0, "UInt")
-End := NumGet(selEnd, 0, "UInt")
+    ; 選択範囲取得
+    VarSetCapacity(selStart, 4, 0)
+    VarSetCapacity(selEnd, 4, 0)
+    SendMessage, 0xB0, &selStart, &selEnd,, ahk_id %hEdit1%
+    Start := NumGet(selStart, 0, "UInt")
+    End := NumGet(selEnd, 0, "UInt")
 
-; テキスト取得
-ControlGetText, fullText,, ahk_id %hEdit1%
-SelectedText := SubStr(fullText, Start + 1, End - Start)
-if (SelectedText != "") {
-;    MsgBox, %SelectedText%
-    Gosub, ClearHamlog
-    GuiControl,, Edit2, %SelectedText%
-    Gosub, CheckCallsign
-}
+    ; テキスト取得
+    ControlGetText, fullText,, ahk_id %hEdit1%
+    SelectedText := SubStr(fullText, Start + 1, End - Start)
+    if (SelectedText != "") {
+    ;    MsgBox, %SelectedText%
+        Gosub, ClearHamlog
+        GuiControl,, Edit2, %SelectedText%
+        Gosub, CheckCallsign
+    }
 
 return
 
@@ -151,17 +159,17 @@ GetHamlogWindow(retry := 0) {
 
 ; Clearボタン
 ClearHamlog:
-hwnd := GetHamlogWindow()
-if (!hwnd) {
-    MsgBox, LOG - を含むHAMLOGウィンドウが見つかりませんでした
-    return
-}
-WinActivate, ahk_id %hwnd%
-WinWaitActive, ahk_id %hwnd%,, 1
-Send, !a
-Sleep, 300
-Gosub, UpdateFromHamlog
-WinActivate, ahk_class AutoHotkeyGUI
+    hwnd := GetHamlogWindow()
+    if (!hwnd) {
+        MsgBox, LOG - を含むHAMLOGウィンドウが見つかりませんでした
+        return
+    }
+    WinActivate, ahk_id %hwnd%
+    WinWaitActive, ahk_id %hwnd%,, 1
+    Send, !a
+    Sleep, 300
+    Gosub, UpdateFromHamlog
+    WinActivate, ahk_class AutoHotkeyGUI
 return
 
 
@@ -176,30 +184,33 @@ HandleKeyDown(wParam, lParam, msg, hwnd)
 }
 
 CheckCallsignTimer:
-Gosub, CheckCallsign
+    Gosub, CheckCallsign
 return
 
 CheckCallsign:
-Gui, Submit, NoHide
+    Gui, Submit, NoHide
 
-hwnd := GetHamlogWindow()
-if (!hwnd) {
-    MsgBox, LOG - を含むHAMLOGウィンドウが見つかりませんでした
-    return
-}
+    hwnd := GetHamlogWindow()
+    if (!hwnd) {
+        MsgBox, LOG - を含むHAMLOGウィンドウが見つかりませんでした
+        return
+    }
+    ; ① コールサインを送る
+    ControlSetText, TEdit14, %Callsign%, ahk_id %hwnd%
+    Sleep, 100
+    ControlSend, TEdit14, {Enter}, ahk_id %hwnd%
 
+    ; ② 少し待って日付・時間を取得して自GUIに反映
+    Sleep, 300  ; HAMLOG側で更新されるのを待つ（必要なら調整）
 
-; ① コールサインを送る
-ControlSetText, TEdit14, %Callsign%, ahk_id %hwnd%
-Sleep, 100
-ControlSend, TEdit14, {Enter}, ahk_id %hwnd%
+    Gosub, UpdateFromHamlog
+    Sleep, 300
 
-; ② 少し待って日付・時間を取得して自GUIに反映
-Sleep, 300  ; HAMLOG側で更新されるのを待つ（必要なら調整）
+    WinActivate, ahk_class AutoHotkeyGUI
 
-Gosub, UpdateFromHamlog
-Sleep, 300
-; WinActivate, ahk_class AutoHotkeyGUI
+    ControlFocus,, ahk_id %hHis%
+    SendMessage, 0xB1, 0, -1,, ahk_id %hHis%
+
 
 return
 
@@ -211,75 +222,75 @@ return
 
 ; いま
 SetNowTime:
-NowTime := A_Hour . ":" . A_Min . "J"
-GuiControl,, Time, %NowTime%
+    NowTime := A_Hour . ":" . A_Min . "J"
+    GuiControl,, Time, %NowTime%
 return
 
 ; HAMLOGに送信
 SendToHamlog:
-Gui, Submit, NoHide
+    Gui, Submit, NoHide
 
-hwnd := GetHamlogWindow()
-if (!hwnd) {
-    MsgBox, LOG - を含むHAMLOGウィンドウが見つかりませんでした
-    return
-}
-WinActivate, ahk_id %hwnd%
-WinWaitActive, ahk_id %hwnd%,, 1
+    hwnd := GetHamlogWindow()
+    if (!hwnd) {
+        MsgBox, LOG - を含むHAMLOGウィンドウが見つかりませんでした
+        return
+    }
+    WinActivate, ahk_id %hwnd%
+    WinWaitActive, ahk_id %hwnd%,, 1
 
-ControlSetText, TEdit14, %Callsign%, ahk_id %hwnd%
-; コールサインを入れたあとにEnterしないとセーブできないクソ仕様回避
-Sleep, 100
-ControlSend, TEdit14, {Enter}, ahk_id %hwnd%
-Sleep, 100  ; HAMLOG側で更新されるのを待つ（必要なら調整）
+    ControlSetText, TEdit14, %Callsign%, ahk_id %hwnd%
+    ; コールサインを入れたあとにEnterしないとセーブできないクソ仕様回避
+    Sleep, 100
+    ControlSend, TEdit14, {Enter}, ahk_id %hwnd%
+    Sleep, 300  ; HAMLOG側で更新されるのを待つ（必要なら調整）
 
-ControlSetText, TEdit13, %Date%, ahk_id %hwnd%
-ControlSetText, TEdit12, %Time%, ahk_id %hwnd%
-ControlSetText, TEdit11, %His%, ahk_id %hwnd%
-ControlSetText, TEdit10, %My%, ahk_id %hwnd%
-ControlSetText, TEdit9, %Freq%, ahk_id %hwnd%
-ControlSetText, TEdit8, %Mode%, ahk_id %hwnd%
-ControlSetText, TEdit7, %Code%, ahk_id %hwnd%
-ControlSetText, TEdit6, %GL%, ahk_id %hwnd%
-ControlSetText, TEdit5, %QSL%, ahk_id %hwnd%
-ControlSetText, TEdit4, %Name%, ahk_id %hwnd%
-ControlSetText, TEdit3, %QTH%, ahk_id %hwnd%
-ControlSetText, TEdit2, %Rem1%, ahk_id %hwnd%
-ControlSetText, TEdit1, %Rem2%, ahk_id %hwnd%
-Sleep, 100  ; HAMLOG側で更新されるのを待つ（必要なら調整）
+    ControlSetText, TEdit11, %His%, ahk_id %hwnd%
+    ControlSetText, TEdit10, %My%, ahk_id %hwnd%
+    ControlSetText, TEdit13, %Date%, ahk_id %hwnd%
+    ControlSetText, TEdit12, %Time%, ahk_id %hwnd%
+    ControlSetText, TEdit9, %Freq%, ahk_id %hwnd%
+    ControlSetText, TEdit8, %Mode%, ahk_id %hwnd%
+    ControlSetText, TEdit7, %Code%, ahk_id %hwnd%
+    ControlSetText, TEdit6, %GL%, ahk_id %hwnd%
+    ControlSetText, TEdit5, %QSL%, ahk_id %hwnd%
+    ControlSetText, TEdit4, %Name%, ahk_id %hwnd%
+    ControlSetText, TEdit3, %QTH%, ahk_id %hwnd%
+    ControlSetText, TEdit2, %Rem1%, ahk_id %hwnd%
+    ControlSetText, TEdit1, %Rem2%, ahk_id %hwnd%
+    Sleep, 300  ; HAMLOG側で更新されるのを待つ（必要なら調整）
 
 return
 
 ; HAMLOGからゲット
 UpdateFromHamlog:
-Gui, Submit, NoHide
-; あえて一番上にあるTForm_Aを使う
-; 各コントロールの値をHAMLOGから取得し、GUIに反映
-ControlGetText, Callsign, TEdit14, ahk_class TForm_A
-if (LockDate == 0) {
- ControlGetText, Date, TEdit13, ahk_class TForm_A
- Date := RegExReplace(Date, "\s")
-}
-; if (LockTime == 0) {
- ControlGetText, Time, TEdit12, ahk_class TForm_A
- Time := RegExReplace(Time, "\s")
-; }
-ControlGetText, His,  TEdit11, ahk_class TForm_A
-ControlGetText, My,   TEdit10, ahk_class TForm_A
-ControlGetText, Freq, TEdit9, ahk_class TForm_A
-ControlGetText, Mode, TEdit8, ahk_class TForm_A
-ControlGetText, Code, TEdit7, ahk_class TForm_A
-ControlGetText, GL,   TEdit6, ahk_class TForm_A
-ControlGetText, QSL,  TEdit5, ahk_class TForm_A
-ControlGetText, Name, TEdit4, ahk_class TForm_A
-ControlGetText, QTH,  TEdit3, ahk_class TForm_A
-if (LockRem1 == 0) {
- ControlGetText, Rem1, TEdit2, ahk_class TForm_A
-}
-if (LockRem2 == 0) {
- ControlGetText, Rem2, TEdit1, ahk_class TForm_A
-}
-Gosub, SetGUI
+    Gui, Submit, NoHide
+    ; あえて一番上にあるTForm_Aを使う
+    ; 各コントロールの値をHAMLOGから取得し、GUIに反映
+    ControlGetText, Callsign, TEdit14, ahk_class TForm_A
+    if (LockDate == 0) {
+        ControlGetText, Date, TEdit13, ahk_class TForm_A
+        Date := RegExReplace(Date, "\s")
+    }
+    ; if (LockTime == 0) {
+        ControlGetText, Time, TEdit12, ahk_class TForm_A
+        Time := RegExReplace(Time, "\s")
+    ; }
+    ControlGetText, His,  TEdit11, ahk_class TForm_A
+    ControlGetText, My,   TEdit10, ahk_class TForm_A
+    ControlGetText, Freq, TEdit9, ahk_class TForm_A
+    ControlGetText, Mode, TEdit8, ahk_class TForm_A
+    ControlGetText, Code, TEdit7, ahk_class TForm_A
+    ControlGetText, GL,   TEdit6, ahk_class TForm_A
+    ControlGetText, QSL,  TEdit5, ahk_class TForm_A
+    ControlGetText, Name, TEdit4, ahk_class TForm_A
+    ControlGetText, QTH,  TEdit3, ahk_class TForm_A
+    if (LockRem1 == 0) {
+        ControlGetText, Rem1, TEdit2, ahk_class TForm_A
+    }
+    if (LockRem2 == 0) {
+        ControlGetText, Rem2, TEdit1, ahk_class TForm_A
+    }
+    Gosub, SetGUI
 return
 
 ; Saveボタン
@@ -296,42 +307,42 @@ return
 ; return
 
 SetGUI:
-GuiControl,, Callsign, %Callsign%
-GuiControl,, Date,     %Date%
-GuiControl,, Time,     %Time%
-GuiControl,, His,      %His%
-GuiControl,, My,       %My%
-GuiControl,, Freq,     %Freq%
-GuiControl,, Mode,     %Mode%
-GuiControl,, Code,     %Code%
-GuiControl,, GL,       %GL%
-GuiControl,, QSL,      %QSL%
-GuiControl,, Name,     %Name%
-GuiControl,, QTH,      %QTH%
-GuiControl,, Rem1,     %Rem1%
-GuiControl,, Rem2,     %Rem2%
+    GuiControl,, Callsign, %Callsign%
+    GuiControl,, Date,     %Date%
+    GuiControl,, Time,     %Time%
+    GuiControl,, His,      %His%
+    GuiControl,, My,       %My%
+    GuiControl,, Freq,     %Freq%
+    GuiControl,, Mode,     %Mode%
+    GuiControl,, Code,     %Code%
+    GuiControl,, GL,       %GL%
+    GuiControl,, QSL,      %QSL%
+    GuiControl,, Name,     %Name%
+    GuiControl,, QTH,      %QTH%
+    GuiControl,, Rem1,     %Rem1%
+    GuiControl,, Rem2,     %Rem2%
 return
 
 ForceClear:
-Callsign := ""
-if (LockDate == 0) {
- Date = //
-}
-; if (LockTime == 0) {
- Time = :
-; }
-Code := ""
-GL := ""
-QSL := ""
-Name := ""
-QTH := ""
-if (LockRem1 == 0) {
- Rem1 := ""
-}
-if (LockRem2 == 0) {
- Rem2 := ""
-}
-Gosub, SetGUI
+    Callsign := ""
+    if (LockDate == 0) {
+        Date = //
+    }
+    ; if (LockTime == 0) {
+        Time = :
+    ; }
+    Code := ""
+    GL := ""
+    QSL := ""
+    Name := ""
+    QTH := ""
+    if (LockRem1 == 0) {
+        Rem1 := ""
+    }
+    if (LockRem2 == 0) {
+        Rem2 := ""
+    }
+    Gosub, SetGUI
 return
 
 ; IME ON/OFF
