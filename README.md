@@ -53,7 +53,10 @@ Turbo HAMLOG にお怒りの総統たちへ送る小さな相棒。
 
 ## 📦 リリース履歴
 
-### v0.９９(beta) - 2025-06-07
+### v0.99.1(beta) - 2025-06-08
+- マルチラインからコールサインを取ってくるときに改行コードが入っていた。
+
+### v0.99(beta) - 2025-06-07
 
 - 初公開
 - Turbo HAMLOG（Ver 5.47）で動作確認済み
@@ -67,6 +70,7 @@ Turbo HAMLOG にお怒りの総統たちへ送る小さな相棒。
 ```bash
 git clone https://github.com/kikyujin/bonelessham.git
 ```
+もしくは zip をダウンロード
 
 ### 2. スクリプトを起動
 ```boneless.ahk```をダブルクリックするなりしてください。  
