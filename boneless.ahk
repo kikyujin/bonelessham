@@ -1,7 +1,7 @@
 ﻿; BONELESS HAM v0.99
 ; Copyright Kikyujin / MULTiTApps Inc.
 ; Released under the MIT license
-; 2025-06/07
+; 2025-06-07
 
 Gui, Font, s12, Meiryo  ; 文字サイズ12pt、フォントMeiryo（日本語推奨）
 
@@ -111,6 +111,12 @@ CopySelection:
     ; テキスト取得
     ControlGetText, fullText,, ahk_id %hEdit1%
     SelectedText := SubStr(fullText, Start + 1, End - Start)
+ 
+    ; 改行処理 → 最初の行だけ使う（CR除去）
+    lines := StrSplit(SelectedText, "`n")
+    SelectedText := Trim(lines[1], "`r`n `t")
+
+  
     if (SelectedText != "") {
     ;    MsgBox, %SelectedText%
         Gosub, ClearHamlog
